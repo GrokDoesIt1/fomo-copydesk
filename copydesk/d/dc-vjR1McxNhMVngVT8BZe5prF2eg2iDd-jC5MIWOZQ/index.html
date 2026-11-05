@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="COPY DESK">
+<meta name="theme-color" content="#000000">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="app.css">
+<title>COPY DESK · PAPER</title>
+<script>
+/* Relative base for GitHub Pages under /copydesk/d/<path>/ */
+window.COPYDESK_BASE = (function(){
+  var p = location.pathname;
+  if (p.endsWith('/')) return p;
+  if (p.endsWith('.html')) return p.replace(/[^/]+$/, '');
+  return p.replace(/\/?$/, '/');
+})();
+</script>
+</head>
+<body>
+<div id="err" class="err" hidden></div>
+<header class="top">
+  <div class="brand">COPY DESK</div>
+  <span class="pill paper">PAPER</span>
+  <span class="pill cyan" id="alive">…</span>
+</header>
+<section class="balwrap">
+  <div class="label">Paper equity</div>
+  <div class="bal" id="bal">$—</div>
+  <div class="sub" id="sub">cash — · exposure —</div>
+  <div class="today" id="today"></div>
+</section>
+<section>
+  <h2>Leaders</h2>
+  <div class="list" id="leaders"></div>
+</section>
+<section>
+  <h2>Open positions</h2>
+  <div class="list" id="positions"><div class="empty-msg">None yet — waiting for leader swaps</div></div>
+</section>
+<section>
+  <h2>Activity</h2>
+  <div class="list" id="activity"><div class="empty-msg">No activity</div></div>
+</section>
+<section class="foot">
+  <div class="t2" id="meta"></div>
+  <div class="t3">PAPER only · no private key · proportional to $200</div>
+</section>
+<script src="app.js"></script>
+</body>
+</html>

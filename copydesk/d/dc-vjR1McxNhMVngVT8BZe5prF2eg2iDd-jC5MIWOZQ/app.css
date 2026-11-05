@@ -1,0 +1,32 @@
+:root{--bg:#000;--t1:#fff;--t2:rgba(235,235,245,.6);--t3:rgba(235,235,245,.3);--sep:rgba(84,84,88,.55);
+--c1:#1c1c1e;--c2:#2c2c2e;--green:#00d35a;--red:#ff453a;--orange:#ff9f0a;--cyan:#64d2ff;--blue:#0a84ff;
+--disp:-apple-system,"SF Pro Display",system-ui,sans-serif;--text:-apple-system,"SF Pro Text",system-ui,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--t1);font:15px/1.35 var(--text);-webkit-font-smoothing:antialiased}
+body{padding:env(safe-area-inset-top) 16px calc(28px + env(safe-area-inset-bottom))}
+.err{position:sticky;top:0;z-index:30;background:var(--red);color:#fff;font-size:13px;padding:8px 16px;margin:0 -16px 12px}
+.top{display:flex;align-items:center;gap:8px;height:52px}
+.brand{font:700 18px var(--disp);letter-spacing:.02em;flex:1}
+.pill{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:12px;font-weight:700;font-size:12px}
+.paper{background:var(--orange);color:#000}
+.cyan{background:rgba(100,210,255,.18);color:var(--cyan)}
+.cyan.off{background:var(--c2);color:var(--t3)}
+.balwrap{margin:8px 0 18px}
+.label{color:var(--t2);font-size:13px}
+.bal{font:700 56px/1 var(--disp);letter-spacing:-1.2px;margin:4px 0}
+.sub{color:var(--t2);font-size:14px}
+.today{font-weight:600;margin-top:6px}
+.up{color:var(--green)}.down{color:var(--red)}.t2{color:var(--t2)}.t3{color:var(--t3);font-size:12px;margin-top:6px}
+h2{font:600 18px var(--disp);margin:22px 0 10px}
+.list{background:var(--c1);border-radius:14px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 14px;position:relative}
+.row+.row::before{content:"";position:absolute;top:0;left:14px;right:0;height:.5px;background:var(--sep)}
+.row .m{flex:1;min-width:0}
+.row .m b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .m span{color:var(--t2);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .v{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:4px;background:var(--green);flex:0 0 auto}
+.dot.off{background:var(--t3)}.dot.warn{background:var(--orange)}
+.empty-msg{color:var(--t2);padding:22px 14px;text-align:center}
+.foot{margin:28px 0 8px}
+.mono{font-family:var(--mono);font-size:11px}
