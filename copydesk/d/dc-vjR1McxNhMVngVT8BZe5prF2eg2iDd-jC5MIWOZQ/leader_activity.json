@@ -1,1 +1,1 @@
-{"rows":[],"desk":"COPY DESK"}
+{"rows":[{"id":1,"ts":"2026-11-05T21:05:46.179053Z","leader_id":"nova6","signature":"48ZFTzNbGtAMLLWfAN3SrAFqL9s8Vt7xwa66Tqv8kTvruNNREPMP1bznFhxZnjxVdmdoQ9ub4iReysq3YNU4W8WX","kind":"rpc_error","mint":null,"side":null,"sol_delta":null,"token_delta":null,"note":"RpcError"}],"desk":"COPY DESK"}
