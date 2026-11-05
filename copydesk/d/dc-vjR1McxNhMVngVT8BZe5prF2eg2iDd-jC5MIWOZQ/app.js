@@ -25,8 +25,11 @@
       const sub = on
         ? shortAddr(L.address)+(L.sol_usd!=null ? ' · ~$'+Math.round(L.sol_usd).toLocaleString()+' SOL≈book' : '')
         : (L.note||'address unresolved');
-      return `<div class="row"><i class="${dot}"></i><div class="m"><b>${L.name}</b><span class="mono">${sub}</span></div><div class="v">${right}</div></div>`;
+      const pnl = L.pnl_30d ? ` <a href="${L.source}" target="_blank" rel="noopener" class="up" style="font-size:12px">30d ${L.pnl_30d}</a>` : '';
+      return `<div class="row"><i class="${dot}"></i><div class="m"><b>${L.name}</b>${pnl}<span class="mono">${sub}</span></div><div class="v">${right}</div></div>`;
     }).join('');
+    const n = (state.leaders||[]).filter(L=>L.enabled).length;
+    const h = document.getElementById('leaders-h'); if(h) h.textContent = 'Leaders · '+n+' enabled';
     el.innerHTML = rows || '<div class="empty-msg">No leaders</div>';
   }
   function renderPositions(data){
