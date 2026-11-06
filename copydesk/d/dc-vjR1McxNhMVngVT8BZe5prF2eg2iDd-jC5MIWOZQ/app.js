@@ -532,7 +532,7 @@
   function renderPositions(positions) {
     const open = (positions.rows || []).filter(r => r.status === 'open');
     const closed = (positions.rows || []).filter(r => r.status !== 'open').slice(0, 20);
-    const scoutNote = (positions && positions.scoutNote) || (cache.state && cache.state.scoutNote) || '$2–$5 paper scouts';
+    const scoutNote = (positions && positions.scoutNote) || (cache.state && cache.state.scoutNote) || '$2–$5 under $50K; up to $100 paper / coin · PAPER ONLY';
     function posRow(p, openFlag) {
       const pnl = p.pnl_usd || 0;
       const cls = pnl >= 0 ? 'up' : 'down';
@@ -596,13 +596,20 @@
     const n = state.followingCount != null ? state.followingCount : following(state).length;
     const scoutLo = rules.scoutBaseUsd != null ? rules.scoutBaseUsd : (state.scoutBaseUsd != null ? state.scoutBaseUsd : 2);
     const scoutHi = rules.scoutMaxUsd != null ? rules.scoutMaxUsd : (state.scoutMaxUsd != null ? state.scoutMaxUsd : 5);
+    const maxCoin = rules.maxTradeUsd != null ? rules.maxTradeUsd : (state.maxTradeUsd != null ? state.maxTradeUsd : 100);
+    const microCap = rules.scoutMicroMcapUsd != null ? rules.scoutMicroMcapUsd : (state.scoutMicroMcapUsd != null ? state.scoutMicroMcapUsd : 50000);
+    const reserve = rules.paperReserveUsd != null ? rules.paperReserveUsd : (state.paperReserveUsd != null ? state.paperReserveUsd : 100);
     return `
-      <div class="nav"><div class="title">Settings</div><span class="pill paper">PAPER</span></div>
-      <div class="note">Read-only. $2–$5 paper scouts · not real money.</div>
-      <div class="hlabel">Scout size</div>
+      <div class="nav"><div class="title">Settings</div><span class="pill paper">PAPER ONLY</span></div>
+      <div class="note">Read-only. $2–$5 under $50K mcap · Up to $100 paper / coin · PAPER ONLY.</div>
+      <div class="hlabel">Paper size</div>
       <div class="card">
-        <div class="rule"><span>Scout</span><b>${money(scoutLo)}–${money(scoutHi)}</b></div>
-        <div class="rule"><span>Mode</span><b>${(rules.scoutMode || state.scoutMode) ? 'PAPER scout' : 'Proportional'}</b></div>
+        <div class="rule"><span>Under $50K mcap</span><b>${money(scoutLo)}–${money(scoutHi)}</b></div>
+        <div class="rule"><span>Stronger setup</span><b>Up to $100 paper / coin</b></div>
+        <div class="rule"><span>Max / coin</span><b>${money(maxCoin)}</b></div>
+        <div class="rule"><span>Micro mcap</span><b>&lt; ${money(microCap)}</b></div>
+        <div class="rule"><span>Cash reserve</span><b>${money(reserve)}</b></div>
+        <div class="rule"><span>Mode</span><b>PAPER ONLY</b></div>
         <div class="rule"><span>Open cap</span><b>${rules.scoutMaxOpenTotal || sr.scoutMaxOpenTotal || '—'} scouts</b></div>
         <div class="rule"><span>Max in</span><b>${money(state.maxExposureUsd)}</b></div>
         <div class="rule"><span>Poll</span><b>${state.pollS || '—'}s</b></div>
