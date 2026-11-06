@@ -22,6 +22,12 @@ window.COPYDESK_BASE = (function(){
 <body>
 <div id="err" class="err" hidden></div>
 <main id="view"></main>
+<div id="sheet" class="sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true">
+    <div class="grab"></div>
+    <div id="sheet-body"></div>
+  </div>
+</div>
 <nav class="tabs" id="tabs">
   <button data-tab="home" class="on" type="button">
     <svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
@@ -44,6 +50,7 @@ window.COPYDESK_BASE = (function(){
     <span>Settings</span>
   </button>
 </nav>
+<script src="chart.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
