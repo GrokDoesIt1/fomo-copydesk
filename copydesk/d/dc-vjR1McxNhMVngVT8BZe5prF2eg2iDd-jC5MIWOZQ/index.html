@@ -21,7 +21,26 @@ window.COPYDESK_BASE = (function(){
 </head>
 <body>
 <div id="err" class="err" hidden></div>
-<main id="view"></main>
+<main id="view">
+<div class="nav">
+  <div class="title">Copy</div>
+  <span class="pill paper">PAPER</span>
+  <span class="pill live off">…</span>
+</div>
+<section class="balwrap">
+  <div class="bal skel-line skel-bal" aria-hidden="true"></div>
+  <div class="delta skel-line skel-delta" aria-hidden="true"></div>
+</section>
+<div class="chartwrap skel-chart" aria-hidden="true"><div class="skel-block"></div></div>
+<div class="ranges"><span class="skel-chip"></span><span class="skel-chip"></span><span class="skel-chip"></span></div>
+<div class="stats">
+  <div class="stat skel-stat"><span class="skel-line"></span><b class="skel-line"></b></div>
+  <div class="stat skel-stat"><span class="skel-line"></span><b class="skel-line"></b></div>
+  <div class="stat skel-stat"><span class="skel-line"></span><b class="skel-line"></b></div>
+</div>
+<div class="hlabel">Activity</div>
+<div class="list feed-slot"><div class="row skel-row"><div class="m"><b class="skel-line"></b><span class="skel-line"></span></div><div class="v skel-line"></div></div></div>
+</main>
 <div id="sheet" class="sheet" hidden>
   <div class="panel" role="dialog" aria-modal="true">
     <div class="grab"></div>

@@ -52,9 +52,22 @@
     return r.replace(/_/g, ' ');
   }
 
+  function isLocalLiveHost(hostname) {
+    const h = hostname || (typeof location !== 'undefined' ? location.hostname : '');
+    return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+  }
+
+  /** Same-origin static JSON on Pages; /api only on local live service. */
+  function dataFetchUrls(path, basePath, hostname) {
+    const file = path.endsWith('.json') ? path : path + '.json';
+    const clean = file.replace(/\.json$/, '');
+    if (isLocalLiveHost(hostname)) return ['/api/' + clean];
+    const b = (!basePath || basePath === './') ? './' : (basePath.endsWith('/') ? basePath : basePath + '/');
+    return [b + file];
+  }
+
   async function j(path) {
-    const clean = path.replace(/\.json$/, '');
-    const tries = ['/api/' + clean, base + path, './' + path];
+    const tries = dataFetchUrls(path, base, typeof location !== 'undefined' ? location.hostname : '');
     let last;
     for (const u of tries) {
       try {
@@ -64,6 +77,28 @@
       } catch (e) { last = e; }
     }
     throw new Error('fetch failed ' + last);
+  }
+
+  function renderLoadingHome() {
+    return `
+      <div class="nav">
+        <div class="title">Copy</div>
+        <span class="pill paper">PAPER</span>
+        <span class="pill live off">…</span>
+      </div>
+      <section class="balwrap">
+        <div class="bal skel-line skel-bal" aria-hidden="true"></div>
+        <div class="delta skel-line skel-delta" aria-hidden="true"></div>
+      </section>
+      <div class="chartwrap skel-chart" aria-hidden="true"><div class="skel-block"></div></div>
+      <div class="ranges"><span class="skel-chip"></span><span class="skel-chip"></span><span class="skel-chip"></span></div>
+      <div class="stats">
+        <div class="stat skel-stat"><span class="skel-line"></span><b class="skel-line"></b></div>
+        <div class="stat skel-stat"><span class="skel-line"></span><b class="skel-line"></b></div>
+        <div class="stat skel-stat"><span class="skel-line"></span><b class="skel-line"></b></div>
+      </div>
+      <div class="hlabel">Activity</div>
+      <div class="list feed-slot"><div class="row skel-row"><div class="m"><b class="skel-line"></b><span class="skel-line"></span></div><div class="v skel-line"></div></div></div>`;
   }
 
   function following(state) {
@@ -369,7 +404,10 @@
   function paint(opts) {
     const soft = opts && opts.soft;
     const { state, positions, activity, signals } = cache;
-    if (!state) return;
+    if (!state) {
+      if (tab === 'home') view.innerHTML = renderLoadingHome();
+      return;
+    }
 
     if (tab === 'home' && soft && homeBuilt && view.querySelector('#bal')) {
       // soft refresh: numbers + chart + latest row only
@@ -519,6 +557,12 @@
     }
   });
 
+  view.innerHTML = renderLoadingHome();
   tick();
   setInterval(tick, 5000);
+
+  // Expose pure helpers for regression tests (node).
+  if (typeof window !== 'undefined') {
+    window.CopyDeskLoad = { isLocalLiveHost, dataFetchUrls };
+  }
 })();
