@@ -41,6 +41,12 @@
       x.beginPath(); x.moveTo(0, Y(start)); x.lineTo(W, Y(start)); x.stroke(); x.setLineDash([]);
     }
 
+    // soft under-fill (chart only — not a card gradient)
+    x.beginPath();
+    pts.forEach((p, i) => i ? x.lineTo(X(p.t), Y(p.v)) : x.moveTo(X(p.t), Y(p.v)));
+    x.lineTo(X(pts[pts.length - 1].t), bot); x.lineTo(X(pts[0].t), bot); x.closePath();
+    x.fillStyle = up ? 'rgba(0,211,90,0.14)' : 'rgba(255,69,58,0.14)';
+    x.fill();
     x.beginPath();
     pts.forEach((p, i) => i ? x.lineTo(X(p.t), Y(p.v)) : x.moveTo(X(p.t), Y(p.v)));
     x.strokeStyle = col; x.lineWidth = 2.2; x.lineJoin = 'round'; x.lineCap = 'round'; x.stroke();
