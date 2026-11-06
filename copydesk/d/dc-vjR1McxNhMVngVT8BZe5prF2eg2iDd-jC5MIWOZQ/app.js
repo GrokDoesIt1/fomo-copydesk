@@ -11,7 +11,7 @@
     { id: 'signal', lab: 'Signal', n: 1 },
     { id: 'liq', lab: 'Liq', n: 2 },
     { id: 'age', lab: 'Age', n: 3 },
-    { id: 'chase', lab: 'Chase', n: 4 },
+    { id: 'mom', lab: 'Mom', n: 4 },
     { id: 'score', lab: 'Score', n: 5 },
     { id: 'size', lab: 'Size', n: 6 },
   ];
@@ -49,22 +49,33 @@
     } catch (e) { return []; }
   }
   function friendlyReject(raw) {
+    const s = String(raw || '');
+    if (!s) return 'Skipped';
+    if (/freeze_authority/i.test(s)) return 'Can freeze';
+    if (/mint_authority/i.test(s)) return 'Mint on';
+    if (/low_liquidity|liq_low/i.test(s)) return 'Low liq';
+    if (/pair_too_new|too_new/i.test(s)) return 'Too new';
+    if (/already_pumped/i.test(s)) return 'Extreme pump';
+    if (/abnormal_chase/i.test(s)) return 'One-sided';
+    if (/score_below/i.test(s)) return 'Low score';
+    if (/no_dex_price/i.test(s)) return 'No price';
     const map = {
       freeze_authority_set: 'Can freeze',
       mint_authority_set: 'Mint on',
       liq_low: 'Low liq',
       too_new: 'Too new',
-      chase: 'Chase',
-      pump_h1: '1h pump',
+      chase: 'One-sided',
+      pump_h1: 'Extreme pump',
       score_low: 'Low score',
       age_sweet: 'Age',
+      extreme_pump: 'Extreme pump',
     };
-    if (!raw) return 'Skipped';
-    return map[raw] || String(raw).replace(/_/g, ' ');
+    return map[s] || s.replace(/_/g, ' ').split(':')[0];
   }
   function friendlyReason(r) {
     if (!r) return '';
     if (r.startsWith('PASS')) return 'Pass';
+    if (r.startsWith('momentum_h1')) return 'Momentum';
     if (r.startsWith('liq_')) return 'Liq';
     if (r.startsWith('age_')) return 'Age';
     if (r.startsWith('flow_')) return 'Flow';
@@ -197,7 +208,7 @@
     const r = (rejects || []).join(' ');
     if (/liq/i.test(r)) return 'liq';
     if (/too_new|age/i.test(r)) return 'age';
-    if (/chase|pump|flow|buy_ratio/i.test(r)) return 'chase';
+    if (/already_pumped|abnormal_chase|buy_ratio/i.test(r)) return 'mom';
     if (/score/i.test(r)) return 'score';
     if (/freeze|mint|authority/i.test(r)) return 'liq';
     return 'score';
@@ -234,12 +245,13 @@
     const reasons = parseJsonArr(s.reasons);
     const fresh = signalAgeMs(s) < 90000;
     const pass = !!s.approve;
+    const isMom = !!(s.momentum || s.entry_mode === 'momentum' || reasons.some(r => String(r).startsWith('momentum_h1')));
     const stc = pass ? 'pass' : 'reject';
     const why = pass
-      ? (reasons.slice(0, 2).map(friendlyReason).join(' · ') || 'Pass')
+      ? (reasons.slice(0, 2).map(friendlyReason).join(' · ') || (isMom ? 'Momentum' : 'Pass'))
       : (rejects.map(friendlyReject).join(' · ') || 'Skip');
-    const who = pass ? 'In' : 'Out';
-    const tag = pass ? 'pass' : 'skip';
+    const who = pass ? (isMom ? 'Mom' : 'In') : 'Out';
+    const tag = pass ? (isMom ? 'momentum' : 'scout') : (s.tag === 'extreme_pump' ? 'pump' : 'skip');
     const active = fresh && !reduce();
     return `<button class="focus ${active ? 'active' : ''} ${stc}" type="button" id="focus" data-sheet="activity">
       <span class="orbmini">${pass ? '✓' : '✕'}${active ? '<i class="ring"></i>' : ''}</span>
@@ -426,12 +438,20 @@
 
   function traderSheet(L, st) {
     const last = st && st.last;
+    const has = !!L.hasFills;
     let body = `<div class="rule"><span>Wallet</span><b class="mono">${esc(shortAddr(L.address))}</b></div>
       <div class="rule"><span>SOL</span><b>${L.sol != null ? L.sol.toFixed(2) : '—'}</b></div>
       <div class="rule"><span>Status</span><b>${L.bootstrapped ? 'Watching' : 'Starting'}</b></div>`;
-    if (L.pnl_30d) body += `<div class="rule"><span>30d</span><b>${esc(L.pnl_30d)}</b></div>`;
+    body += `<div class="rule"><span>Paper entries</span><b>${has ? (L.entries || 0) : 'No fills'}</b></div>`;
+    body += `<div class="rule"><span>Closed</span><b>${has ? (L.closed || 0) : '—'}</b></div>`;
+    body += `<div class="rule"><span>Wins / losses</span><b>${has && (L.closed || 0) > 0 ? ((L.wins || 0) + ' / ' + (L.losses || 0)) : '—'}</b></div>`;
+    body += `<div class="rule"><span>Win rate</span><b>${has && L.winRate != null ? (L.winRate + '%') : (has ? 'No closed' : 'No fills')}</b></div>`;
+    body += `<div class="rule"><span>Paper PnL</span><b class="${(L.totalPnl || 0) >= 0 ? 'up' : 'down'}">${has ? money(L.totalPnl || 0) : 'No fills'}</b></div>`;
+    if (L.externalPnlLabel || L.pnl_30d) {
+      body += `<div class="rule"><span>Public 30d</span><b>${esc(L.externalPnlLabel || L.pnl_30d)}</b></div>`;
+    }
     if (last) {
-      body += `<div class="rule"><span>Last</span><b>${last.approve ? 'In' : 'Out'}</b></div>`;
+      body += `<div class="rule"><span>Last signal</span><b>${last.approve ? ((last.entry_mode === 'momentum' || last.momentum) ? 'Mom in' : 'In') : 'Out'}</b></div>`;
       if (!last.approve) {
         const rej = parseJsonArr(last.rejects);
         body += `<div class="rule"><span>Why</span><b>${esc(friendlyReject(rej[0] || 'rule'))}</b></div>`;
@@ -439,16 +459,29 @@
         body += `<div class="rule"><span>Score</span><b>${esc(last.score)}</b></div>`;
       }
     }
-    return `<h3>${esc(L.name)}</h3><p class="sub">${esc(L.source || 'Public wallet')}</p><div class="card">${body}</div>
-      <p class="t3">Tap outside to close · read-only</p>`;
+    return `<h3>${esc(L.name)}</h3><p class="sub">PAPER scout outcomes only · not a forecast</p><div class="card">${body}</div>
+      <p class="t3">Public 30d is their label, not this desk · read-only</p>`;
   }
 
+  let traderSort = 'pnl';
   function renderTraders(state, signals) {
-    const rows = following(state);
+    const rows = following(state).slice();
     const q = qTraders.trim().toLowerCase();
-    const filtered = rows.filter(L => {
+    let filtered = rows.filter(L => {
       if (!q) return true;
       return (L.name || '').toLowerCase().includes(q) || (L.id || '').toLowerCase().includes(q) || (L.address || '').toLowerCase().includes(q);
+    });
+    filtered.sort((a, b) => {
+      if (traderSort === 'wins') {
+        const aw = a.hasFills && a.winRate != null ? a.winRate : -1;
+        const bw = b.hasFills && b.winRate != null ? b.winRate : -1;
+        return bw - aw;
+      }
+      if (traderSort === 'entries') return (b.entries || 0) - (a.entries || 0);
+      // default: paper pnl (no fills last)
+      const ap = a.hasFills ? (a.totalPnl || 0) : -1e12;
+      const bp = b.hasFills ? (b.totalPnl || 0) : -1e12;
+      return bp - ap;
     });
     const byLeader = {};
     (signals.rows || []).forEach(s => {
@@ -459,14 +492,22 @@
     });
     return `
       <div class="nav"><div class="title">Traders</div><span class="pill live on">${rows.length}</span></div>
+      <p class="note" style="margin:8px 12px 0">PAPER scout results only · tap a trader for detail</p>
+      <div class="seg" id="trader-sort">
+        <button type="button" data-ts="pnl" class="${traderSort === 'pnl' ? 'on' : ''}">PnL</button>
+        <button type="button" data-ts="wins" class="${traderSort === 'wins' ? 'on' : ''}">Win%</button>
+        <button type="button" data-ts="entries" class="${traderSort === 'entries' ? 'on' : ''}">Fills</button>
+      </div>
       <input class="search" id="search-traders" placeholder="Search" value="${esc(qTraders)}">
       <div class="list">${filtered.length ? filtered.map(L => {
         const st = byLeader[L.id] || {};
         const last = st.last;
-        let right = L.sol != null ? L.sol.toFixed(1) : '—';
-        let sub = L.bootstrapped ? 'Watching' : 'Starting';
-        if (last) sub += last.approve ? ' · In' : ' · Out';
-        const stc = last ? (last.approve ? 'st-pass' : 'st-reject') : '';
+        let right = L.hasFills ? money(L.totalPnl || 0) : 'No fills';
+        let sub = L.hasFills
+          ? ((L.entries || 0) + ' fills · ' + (L.winRate != null ? (L.winRate + '% win') : 'open'))
+          : (L.bootstrapped ? 'No fills yet' : 'Starting');
+        if (last) sub += last.approve ? ((last.entry_mode === 'momentum' || last.momentum) ? ' · Mom' : ' · In') : ' · Out';
+        const stc = L.hasFills ? ((L.totalPnl || 0) >= 0 ? 'st-pass' : 'st-reject') : (last ? (last.approve ? 'st-pass' : 'st-check') : '');
         return `<button class="row ${stc}" type="button" data-trader="${esc(L.id)}">
           <i class="dot${L.bootstrapped ? '' : ' warn'}"></i>
           <div class="m"><b>${esc(L.name)}</b><span>${esc(sub)}</span></div>
@@ -491,6 +532,7 @@
   function renderPositions(positions) {
     const open = (positions.rows || []).filter(r => r.status === 'open');
     const closed = (positions.rows || []).filter(r => r.status !== 'open').slice(0, 20);
+    const scoutNote = (positions && positions.scoutNote) || (cache.state && cache.state.scoutNote) || '$2–$5 paper scouts';
     function posRow(p, openFlag) {
       const pnl = p.pnl_usd || 0;
       const cls = pnl >= 0 ? 'up' : 'down';
@@ -503,8 +545,9 @@
       </button>`;
     }
     return `
-      <div class="nav"><div class="title">Positions</div></div>
-      <div class="hlabel">Open</div>
+      <div class="nav"><div class="title">Positions</div><span class="pill paper">PAPER</span></div>
+      <p class="note" style="margin:8px 12px 0">${esc(scoutNote)}</p>
+      <div class="hlabel">Open scouts</div>
       <div class="list">${open.length ? open.map(p => posRow(p, true)).join('') : '<div class="empty-msg">None</div>'}</div>
       <div class="hlabel">Out</div>
       <div class="list">${closed.length ? closed.map(p => posRow(p, false)).join('') : '<div class="empty-msg">None</div>'}</div>`;
@@ -549,33 +592,37 @@
 
   function renderSettings(state) {
     const rules = state.rulesPlain || state.signalRules || {};
+    const sr = state.signalRules || {};
     const n = state.followingCount != null ? state.followingCount : following(state).length;
+    const scoutLo = rules.scoutBaseUsd != null ? rules.scoutBaseUsd : (state.scoutBaseUsd != null ? state.scoutBaseUsd : 2);
+    const scoutHi = rules.scoutMaxUsd != null ? rules.scoutMaxUsd : (state.scoutMaxUsd != null ? state.scoutMaxUsd : 5);
     return `
       <div class="nav"><div class="title">Settings</div><span class="pill paper">PAPER</span></div>
-      <div class="note">Read-only. Change risk in Telegram.</div>
-      <div class="hlabel">Risk</div>
+      <div class="note">Read-only. $2–$5 paper scouts · not real money.</div>
+      <div class="hlabel">Scout size</div>
       <div class="card">
-        <div class="rule"><span>Start</span><b>${money(state.startBalance)}</b></div>
-        <div class="rule"><span>Max / trade</span><b>${money(state.maxTradeUsd)}</b></div>
+        <div class="rule"><span>Scout</span><b>${money(scoutLo)}–${money(scoutHi)}</b></div>
+        <div class="rule"><span>Mode</span><b>${(rules.scoutMode || state.scoutMode) ? 'PAPER scout' : 'Proportional'}</b></div>
+        <div class="rule"><span>Open cap</span><b>${rules.scoutMaxOpenTotal || sr.scoutMaxOpenTotal || '—'} scouts</b></div>
         <div class="rule"><span>Max in</span><b>${money(state.maxExposureUsd)}</b></div>
-        <div class="rule"><span>Min</span><b>${money(state.minTradeUsd)}</b></div>
         <div class="rule"><span>Poll</span><b>${state.pollS || '—'}s</b></div>
         <div class="rule"><span>Following</span><b>${n}</b></div>
       </div>
-      <div class="hlabel">In</div>
+      <div class="hlabel">In (relaxed)</div>
       <div class="card">
-        <div class="rule"><span>Min liq</span><b>${money(rules.entryMinLiqUsd || (state.signalRules || {}).entryMinLiqUsd)}</b></div>
-        <div class="rule"><span>Min age</span><b>${(rules.entryMinAgeMin || (state.signalRules || {}).entryMinAgeMin) || '—'}m</b></div>
-        <div class="rule"><span>Score</span><b>${(rules.entryScoreMin || (state.signalRules || {}).entryScoreMin) || '—'}+</b></div>
-        <div class="rule"><span>Max 1h</span><b>${(rules.entryMaxH1PumpPct || (state.signalRules || {}).entryMaxH1PumpPct) || '—'}%</b></div>
+        <div class="rule"><span>Min liq</span><b>${money(rules.entryMinLiqUsd || sr.entryMinLiqUsd)}</b></div>
+        <div class="rule"><span>Min age</span><b>${(rules.entryMinAgeMin || sr.entryMinAgeMin) || '—'}m</b></div>
+        <div class="rule"><span>Score</span><b>${(rules.entryScoreMin || sr.entryScoreMin) || '—'}+</b></div>
+        <div class="rule"><span>Momentum OK</span><b>~+${(rules.entryMomentumH1Pct || sr.entryMomentumH1Pct) || 25}%</b></div>
+        <div class="rule"><span>Extreme 1h</span><b>≥${(rules.entryMaxH1PumpPct || sr.entryMaxH1PumpPct) || '—'}%</b></div>
       </div>
       <div class="hlabel">Out</div>
       <div class="card">
-        <div class="rule"><span>Stop</span><b>−${(rules.exitStopPct || (state.signalRules || {}).exitStopPct) || '—'}%</b></div>
-        <div class="rule"><span>Trail</span><b>−${(rules.exitTrailPct || (state.signalRules || {}).exitTrailPct) || '—'}%</b></div>
-        <div class="rule"><span>Hold</span><b>${(rules.exitMaxHoldH || (state.signalRules || {}).exitMaxHoldH) || '—'}h</b></div>
+        <div class="rule"><span>Stop</span><b>−${(rules.exitStopPct || sr.exitStopPct) || '—'}%</b></div>
+        <div class="rule"><span>Trail</span><b>−${(rules.exitTrailPct || sr.exitTrailPct) || '—'}%</b></div>
+        <div class="rule"><span>Hold</span><b>${(rules.exitMaxHoldH || sr.exitMaxHoldH) || '—'}h</b></div>
       </div>
-      <p class="t3">${esc(state.mode || 'PAPER')} · ${esc(state.rpc || '—')}</p>`;
+      <p class="t3">${esc(state.mode || 'PAPER')} · ${esc(state.rpc || '—')} · no live orders</p>`;
   }
 
   function bindHome() {
@@ -645,6 +692,8 @@
 
     const stEl = view.querySelector('#search-traders');
     if (stEl) stEl.addEventListener('input', e => { qTraders = e.target.value; paint(); });
+    const tsort = view.querySelector('#trader-sort');
+    if (tsort) tsort.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { traderSort = b.getAttribute('data-ts'); paint(); }));
     const sa = view.querySelector('#search-activity');
     if (sa) sa.addEventListener('input', e => { qActivity = e.target.value; paint(); });
     const seg = view.querySelector('#act-seg');
