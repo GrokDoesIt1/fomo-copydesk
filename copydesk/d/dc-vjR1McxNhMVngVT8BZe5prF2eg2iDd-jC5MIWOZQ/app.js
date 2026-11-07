@@ -514,7 +514,21 @@
           <div class="v">${esc(right)}</div>
           <span class="chev">›</span>
         </button>`;
-      }).join('') : '<div class="empty-msg">None</div>'}</div>`;
+      }).join('') : '<div class="empty-msg">None</div>'}</div>${candSection(state)}`;
+  }
+  function candSection(state) {
+    const C = state.candidates;
+    if (!C) return '';
+    const f = v => v === null || v === undefined ? '—' : (v === Infinity ? '∞' : Number(v).toFixed(2));
+    const rows = (C.wallets || []).map(w => {
+      const m = w.mirror || {}, r = w.rules || {};
+      return `<div class="row"><div class="m"><b>${esc(w.address.slice(0, 4))}…${esc(w.address.slice(-4))}</b>
+        <span>${w.verifiedBuys} verified buys · ${w.excluded} excluded tx · ${w.historyRoundTripsSol} past round trips · n=${m.trades} · ${esc(w.confidence)}</span>
+        <span>Mirror: exp $${f(m.expectancy)} · win ${m.winRate == null ? '—' : m.winRate + '%'} · PF ${f(m.profitFactor)} · DD $${f(m.maxDrawdown)} · open ${m.openTrades}</span>
+        <span>Our rules: exp $${f(r.expectancy)} · win ${r.winRate == null ? '—' : r.winRate + '%'} · PF ${f(r.profitFactor)} · DD $${f(r.maxDrawdown)}</span></div></div>`;
+    }).join('');
+    return `<div class="sec"><b>Candidates (watch only)</b><span class="t2">${(C.wallets || []).length} wallets · not copied · min sample ${C.minSample}</span></div>
+      <div class="list">${rows || '<div class="empty-msg">Sourcing…</div>'}</div><div class="empty-msg">${esc(C.note)}</div>`;
   }
 
   function posSheet(p, openFlag) {
